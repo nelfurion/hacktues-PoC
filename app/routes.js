@@ -1,4 +1,3 @@
-var QueryModule = require('./scripts/QueryModule.js');
 var User = require('./models/user.js');
 var Page = require('./models/page.js');
 
