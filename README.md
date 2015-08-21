@@ -11,11 +11,15 @@ HackTUES proof of concept for using node
 ###Admin
   - Exclusive admin page
   - See all users
+  - Add pages
   
+###Teams
+  - Teams are listed in a separate page
+
 ###Adding pages
   - Pages have their own name
   - Pages have their own href
-  - Pages have their own html (for now we just render the href of the page)
+  - Pages have their own html
 
 ###Navigation
   - Navigation renders all pages, that have the nav flag set to 'true'
