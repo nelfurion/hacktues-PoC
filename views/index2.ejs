@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        <nav>
+            <ul>
+                <% for (var i = 0; i < navPages.length; i++) { %>
+                    <li><a href="/pages/<%= navPages[i].href %>"><%= navPages[i].name %></a></li>
+                <% } %>
+            </ul>
+        </nav>
+    </body>
+</html>

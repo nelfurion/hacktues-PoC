@@ -1,0 +1,156 @@
+<!-- views/profile.ejs -->
+<!doctype html>
+<html>
+    <head>
+        <title>HackTUES - Профил</title>
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+        <style>
+            body        { padding-top:80px; word-wrap:break-word; }
+            .edit {
+                border: 1px solid grey;
+                cursor: pointer;
+            }
+            ul {
+                list-style-type: none;
+                margin: 0;
+                padding: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="page-header text-center">
+                <h1><span class="fa fa-anchor"></span> <%= user.name %></h1>
+                <a href="/logout" class="btn btn-default btn-sm">Logout</a>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="well">
+                        <h3><span class="fa fa-user"></span>Потребител</h3>
+                        <ul>
+                            <li>
+                                <strong>id: </strong><span><%= user._id %></span>
+                                <span name="id" class="edit">Редактирай</span>
+                            </li>
+                            <li>
+                                <strong>email: </strong><span><%= user.email %></span>
+                                <span name="email" class="edit">Редактирай</span>
+                            </li>
+                            <li>
+                                <strong>password: </strong><span><%= user.password %></span>
+                                <span name="password" class="edit">Редактирай</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="well">
+                        <h3><span class="fa fa-user"></span>Отбор</h3>
+                        <ul>
+                            <li>
+                                <strong>Отбор: </strong><span id="team-name"><%= user.team %></span>
+                                <span name="team" class="edit">Редактирай</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+        <script type="text/javascript">
+            var ProfileModule = (function ($) {
+                var profileModule = {};
+
+                profileModule.editFieldEvent = function (event) {
+                    event.preventDefault();
+                    $this = $(event.target);
+                    console.log('Here');
+                    profileModule.editField($this);
+                }
+
+                profileModule.setEditEvent = function () {
+                    $('.edit').on('click', function(event) {
+                        profileModule.editFieldEvent(event);
+                    });
+                };
+
+                profileModule.editField = function (caller) {
+                    var span = caller.prev();
+                    var oldValue = span.html();
+                    var newSpan = span.clone();
+                    newSpan.html('Извършва се...');
+                    span.remove();
+
+                    var input = $('<input />')
+                        .attr('type', 'text')
+                        .attr('value', oldValue);
+
+                    var li = caller.parent();
+                    li.append(input);
+
+                    var field = caller.attr('name');
+
+                    var callerCopy = caller.clone();
+                    caller.remove();
+
+                    var update = $('<span />')
+                        .addClass('edit')
+                        .attr('id', 'update-team')
+                        .css('margin-left', '5px')
+                        .html('Запиши');
+                    update.on('click', function(event) {
+                        event.preventDefault();
+                        input.remove();
+                        update.remove();
+                        li.append(newSpan);
+                        var query = {
+                            _id: '<%= user._id %>'
+                        };
+
+                        var newValue = input.val();
+                        var options = {};
+                        options[field] = newValue;
+
+                        var data = {};
+                        data.options = options;
+                        data.query = query;
+                        profileModule.updateUserInfo(data, newSpan, newValue, callerCopy);
+                    });
+                    li.append(update);
+                }
+
+                profileModule.updateUserInfo = function (data, container, newValue, callerCopy) {
+                    $.ajax({
+                        url: 'updateUserInfo',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: data
+                    })
+                    .done(function() {
+                        container.html(newValue);
+                        container.parent().append(callerCopy);
+                        callerCopy.on('click', function(event) {
+                            event.preventDefault();
+                            profileModule.editFieldEvent(event);
+                        });
+                    })
+                    .fail(function() {
+                        var teamName = $('#team-name');
+                        var oldHTML = teamName.html();
+                        teamName.html(oldHTML + ' Could not change team name.');
+                    })
+                    .always(function(a) {
+                        console.log(a);
+                    });
+                };
+
+                return profileModule;
+            }(jQuery));
+
+            var profileModule = ProfileModule;
+
+            profileModule.setEditEvent();
+        </script>
+    </body>
+</html>

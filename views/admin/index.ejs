@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        <h1>YOU ARE AN ADMIN1!!!!!!111!11!</h1>
+        <button onclick="usersModule.getAllUsers()">Get all users</button>
+        <!-- BULLSHIT -->
+        <input type="text" id="page-name" name="name" value="" placeholder="page name">
+        <input type="text" id="page-href" name="href" value="" placeholder="page href">
+        <input type="checkbox" id="page-nav" name="nav">
+        <button onclick="createPage()">Create page</button>
+        <!-- BULLSHIT END -->
+        <div id="users-list-container">
+        </div>
+        <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+        <script type="text/javascript">
+            var UsersModule = (function ($) {
+                var usersModule = {};
+                //skipping constructors and such, because we don't need them
+                usersModule.getAllUsers = function () {
+                    $('#users-list-container').html('Loading users...');
+                    $.ajax({
+                        url: 'getAllUsers',
+                        type: 'GET',
+                    })
+                    .done(function(users) {
+                        $('#users-list-container').html(users);
+                    })
+                    .fail(function() {
+                        $('#users-list-container').css('color', 'red');
+                        $('#users-list-container').html('Could not get users...');
+                    });
+                }
+
+                return usersModule;
+            }(jQuery));
+
+            var usersModule = UsersModule;
+
+            console.log(usersModule);
+
+            function createPage() {
+                var pageName = $('#page-name').val();
+
+                var wat = $('#page-nav')[0].checked;
+
+                if (!wat) {
+                    throw 'NO CHECKED VALUE!';
+                }
+
+                var page = {
+                    name: $('#page-name').val(),
+                    href: $('#page-href').val(),
+                    nav: $('#page-nav')[0].checked
+                };
+
+                $.ajax({
+                    url: '/epic/createPage/',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: page
+                })
+                .done(function() {
+                    console.log("success");
+                })
+                .fail(function() {
+                    console.log("error");
+                })
+                .always(function() {
+                    console.log("complete");
+                });
+
+            }
+        </script>
+    </body>
+</html>
