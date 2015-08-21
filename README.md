@@ -46,3 +46,9 @@ HackTUES proof of concept for using node
 ##Want to help?
 
   Clone and open a command window inside the project directory. Install dependencies with 'npm install'.
+  
+  Start server with 'npm server.js'.
+  
+  For dynamic changes install nodemon. It restarts the server, when a file is edited.  
+  
+  Start server with 'nodemon server.js'.
