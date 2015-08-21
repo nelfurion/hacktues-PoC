@@ -1,26 +1,36 @@
 var User = require('./models/user.js');
 var Page = require('./models/page.js');
+var Team = require('./models/team.js');
 
 module.exports = function (app, passport) {
+    /*NEW ROUTER */
     app.get('/', function(req, res) {
-        res.render('index.ejs', {
-            message: req.flash('privilegesMessage')
-        });
-    });
-
-    app.get('/index2', function(req, res) {
-        var navPages = Page.find({nav: 'true'}, function (err, pages) {
+        Page.find({}, function(err, pages) {
             if (err) {
                 throw err;
             }
 
-            console.log(pages);
-            res.render('index2.ejs', {
-                navPages: pages
+            var navPages = [];
+
+            for (var i = 0; i < pages.length; i++) {
+                if (pages[i].nav === 'true') {
+                    navPages.push(pages[i]);
+                }
+            }
+
+            console.log(navPages);
+
+            res.render('index.ejs', {
+                message: req.flash('privilegesMessage'),
+                dbPages: pages,
+                navPages: navPages
             });
-        })
+        });
     });
 
+
+
+    /* OLD ROUTER */
     app.post('/epic/createPage', function(req, res) {
         console.log(req.body);
         Page.collection.insert(req.body, function (err, docs) {
@@ -46,6 +56,17 @@ module.exports = function (app, passport) {
 
             res.send(page.href);
         });
+    });
+
+    app.get('/teams', function(req, res) {
+        Team.find({}, function (err, teams) {
+            if (err) {
+                throw err;
+            }
+            res.render('teams.ejs',{
+                teams: teams
+            });
+        })
     });
 
     //show login form
@@ -75,8 +96,20 @@ module.exports = function (app, passport) {
     }));
 
     app.get('/profile', isLoggedIn, function(req, res) {
-        res.render('profile.ejs', {
-            user: req.user // get the user out of session and pass it to template
+        Team.findOne({name: req.user.team}, function (err, team) {
+            if (err) {
+                throw err;
+            }
+
+            var teamMembers = [];
+            if (team) {
+                teamMembers = team.members;
+            }
+
+            res.render('profile.ejs', {
+                user: req.user,
+                teamMembers: teamMembers // get the user out of session and pass it to template
+            });
         });
     });
 
@@ -102,18 +135,54 @@ module.exports = function (app, passport) {
     });
 
     app.post('/updateUserInfo', function(req, res) {
-        User.update(req.body.query, req.body.options, function (err, numAffected) {
+        /*Async, so not sure how to separate validation functions from update
+            and call update after validation has finished.*/
+        var teamName = req.body.options.team;
+        if (teamName) {
+            Team.findOne({name: teamName}, function (err, team) {
+                if (err) {
+                    throw err;
+                }
+
+                //can't set this team name if such team already exists
+                if (team) {
+                    res.send('error');
+                    return;
+                }
+                /*Cant call it outside of validation, because
+                    validation is async */
+                Team.collection.insert({
+                    name: teamName,
+                    members: []
+                }, function (err, docs) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log('Created team: ' + docs[0].name);
+                });
+                updateUserInfo(req, res);
+            });
+        } else {
+            updateUserInfo(req, res);
+        }
+    });
+
+    app.get('/*', function(req, res) {
+        console.log('ORIGINAL URL: ' + req.originalUrl);
+        Page.findOne({href: req.originalUrl}, function (err, page) {
             if (err) {
                 throw err;
             }
 
-            console.log('Updated user: ' + req.params.id);
-            //jquery data is set to json
-            res.send('{}');
-        });
+            if (!page) {
+                res.render('404.ejs');
+                return;
+            }
+
+            res.send(page.body);
+        })
     });
-
-
 
     //middleware to make sure user is logged in
     function isLoggedIn(req, res, next) {
@@ -131,5 +200,17 @@ module.exports = function (app, passport) {
         }
         req.flash('privilegesMessage', 'You don\'t have the required privileges to visit this page!');
         res.redirect('/');
+    }
+
+    function updateUserInfo(req, res) {
+        User.update(req.body.query, req.body.options, function (err, numAffected) {
+            if (err) {
+                throw err;
+            }
+
+            console.log('Updated user: ' + req.body.query._id);
+            //jquery data is set to json
+            res.send('{}');
+        });
     }
 }

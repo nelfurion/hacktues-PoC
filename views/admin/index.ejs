@@ -10,6 +10,7 @@
         <!-- BULLSHIT -->
         <input type="text" id="page-name" name="name" value="" placeholder="page name">
         <input type="text" id="page-href" name="href" value="" placeholder="page href">
+        <input type="text" id="page-body" name="href" value="" placeholder="page body">
         <input type="checkbox" id="page-nav" name="nav">
         <button onclick="createPage()">Create page</button>
         <!-- BULLSHIT END -->
@@ -45,15 +46,10 @@
             function createPage() {
                 var pageName = $('#page-name').val();
 
-                var wat = $('#page-nav')[0].checked;
-
-                if (!wat) {
-                    throw 'NO CHECKED VALUE!';
-                }
-
                 var page = {
                     name: $('#page-name').val(),
                     href: $('#page-href').val(),
+                    body: $('#page-body').val(),
                     nav: $('#page-nav')[0].checked
                 };
 

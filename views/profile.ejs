@@ -46,12 +46,16 @@
                 </div>
                 <div class="col-sm-6">
                     <div class="well">
+                        <span class='edit pull-right'>Добави съотборник</span>
                         <h3><span class="fa fa-user"></span>Отбор</h3>
                         <ul>
                             <li>
                                 <strong>Отбор: </strong><span id="team-name"><%= user.team %></span>
                                 <span name="team" class="edit">Редактирай</span>
                             </li>
+                            <% for (var i = 0; i < teamMembers.length; i++) { %>
+                                <li class="team-member"> -> <a href="user/<%= teamMembers[i].id %>"><%= teamMembers[i].name %></a></li>
+                            <% } %>
                         </ul>
                     </div>
                 </div>
