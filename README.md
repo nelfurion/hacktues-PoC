@@ -52,3 +52,5 @@ HackTUES proof of concept for using node
   For dynamic changes install nodemon. It restarts the server, when a file is edited.  
   
   Start server with 'nodemon server.js'.
+  
+  You would probably want to change the port on which the server listens. Change it in server.js.
