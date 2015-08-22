@@ -8,6 +8,7 @@ HackTUES proof of concept for using node
   - Change any kind of data
   - Can adequately create a new team trhough a form
   - Can change team details
+  - Receives system messages, which can inlcude invites to join team. User can join a team if invited.
   
 ###Admin
   - Exclusive admin page
@@ -16,6 +17,7 @@ HackTUES proof of concept for using node
   
 ###Teams
   - Teams are listed in a separate page
+  - Team members can invite users
   - Have 
     - name
     - creator
