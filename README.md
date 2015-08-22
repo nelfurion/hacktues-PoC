@@ -6,7 +6,8 @@ HackTUES proof of concept for using node
   - Register
   - Login
   - Change any kind of data
-  - Little team control
+  - Can adequately create a new team trhough a form
+  - Can change team details
   
 ###Admin
   - Exclusive admin page
@@ -15,6 +16,15 @@ HackTUES proof of concept for using node
   
 ###Teams
   - Teams are listed in a separate page
+  - Have 
+    - name
+    - creator
+    - captain
+    - members
+    - member invites
+    - project name
+    - project description
+    - technology used
 
 ###Adding pages
   - Pages have their own name
