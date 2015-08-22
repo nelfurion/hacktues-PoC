@@ -1,0 +1,16 @@
+<h3><span class="fa fa-user"></span>Отбор</h3>
+<%  if (user.team) { %>
+    <span id="invite-member" class='pull-right'>Добави съотборник</span>
+
+    <ul>
+        <li>
+            <strong>Отбор: </strong><span id="team-name"><%= user.team %></span>
+            <span name="team" class="edit">Редактирай</span>
+        </li>
+        <% for (var i = 0; i < teamMembers.length; i++) { %>
+            <li class="team-member"> -> <a href="user/<%= teamMembers[i].id %>"><%= teamMembers[i].name %></a></li>
+        <% } %>
+    </ul>
+<% } else { %>
+    <span name="team" onclick="profileModule.appendTeamForm()" class="edit">Създай отбор</span>
+<% } %>

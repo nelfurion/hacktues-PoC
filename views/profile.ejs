@@ -155,6 +155,8 @@
                     systemMessages: '<%= user.systemMessages %>',
                 };
 
+                profileModule.teamView = $('#user-team-info').html();
+
                 /*TODO ANTI KPK SHOULD BE FIXED */
                 profileModule.initFunctionality = function (systemMessagesTemplate) {
                     /*TODO fix this event */
@@ -230,7 +232,8 @@
                         }
                     })
                     .fail(function() {
-                        alert('Error fetching messages!');
+                        //TODO this fires when page is reloaded, while request loads
+                        console.log('Error fetching messages!');
                     });
                 }
 
@@ -278,12 +281,14 @@
                         .done(function(result) {
                             teamDiv.html(result);
                             profileModule.user.team = result.name;
+                            window.location.replace("/profile");
                         })
                         .fail(function() {
-                            console.log("error");
+                            teamDiv.html(profileModule.teamView);
+                            teamDiv.append('Вече съществува такъв отбор.');
                         });
                     } else {
-                        alert('Required fields are empty!');
+                        alert('Има непопълнена задължителна информация!');
                     }
                 };
 
@@ -319,7 +324,7 @@
                         }
                     })
                     .done(function() {
-                        console.log("success");
+                        window.location.replace("/profile");
                     })
                     .fail(function() {
                         console.log("error");

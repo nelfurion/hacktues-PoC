@@ -2,6 +2,7 @@ var User = require('./models/user.js');
 var Page = require('./models/page.js');
 var Team = require('./models/team.js');
 var SystemMessage = require('./models/systemMessage.js');
+var serverError = 500; //for ajax
 
 module.exports = function (app, passport) {
     /*NEW ROUTER */
@@ -18,8 +19,6 @@ module.exports = function (app, passport) {
                     navPages.push(pages[i]);
                 }
             }
-
-            console.log(navPages);
 
             res.render('index.ejs', {
                 message: req.flash('privilegesMessage'),
@@ -64,8 +63,7 @@ module.exports = function (app, passport) {
 
                 //can't set this team name if such team already exists
                 if (team) {
-                    console.log('HERE');
-                    res.send(false);
+                    res.send(serverError);
                     return;
                 }
 
@@ -96,7 +94,7 @@ module.exports = function (app, passport) {
                         if (err) {
                             throw err;
                         }
-
+                        res.send('lorem');
                         console.log('Updated: ' + numAffected + ' users...');
                     });
 
@@ -121,11 +119,22 @@ module.exports = function (app, passport) {
                 console.log(userId);
                 throw 'Can\'t find user with such id: ' + userId;
             }
-            console.log(user.systemMessages[messageId]);
+
             var team = user.systemMessages[messageId].teamSender;
             user.systemMessages.splice(messageId, 1);
             if (answer) {
                 user.team = team;
+                Team.findOne({name: team}, function (err, team) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    if (!team) {
+                        throw 'Trying to add user to no existing team!';
+                    }
+
+                    team.members.push(user);
+                })
             }
 
             user.save(function (err) {
@@ -133,6 +142,7 @@ module.exports = function (app, passport) {
                     throw err;
                 }
 
+                res.send('lorem');
                 console.log('Updated user: ' + user._id + '...');
             });
         });
@@ -276,7 +286,6 @@ module.exports = function (app, passport) {
     });
 
     app.get('/*', function(req, res) {
-        console.log('ORIGINAL URL: ' + req.originalUrl);
         Page.findOne({href: req.originalUrl}, function (err, page) {
             if (err) {
                 throw err;
