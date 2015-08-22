@@ -7,7 +7,8 @@ var userSchema = mongoose.Schema({
     name: String,
     userType: String,
     technologies: Object,
-    team: String
+    team: String,
+    teamInvites: Array
     /*local: {
         email: String,
         password: String,

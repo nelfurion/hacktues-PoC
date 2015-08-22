@@ -28,9 +28,70 @@ module.exports = function (app, passport) {
         });
     });
 
+    app.get('/createTeam', function(req, res) {
+        res.render('partials/create-team.ejs');
+    });
 
+    app.post('/createTeam', function(req, res) {
+        console.log(req.body);
+        var teamName = req.body.name,
+            projectName = req.body.projectName,
+            projectDescription = req.body.projectDescription,
+            teamTechnologies = req.body.technologies,
+            creator = req.body.creator;
 
-    /* OLD ROUTER */
+        if (teamName && projectName && projectDescription &&
+            teamTechnologies && creator) {
+            Team.findOne({name: teamName}, function (err, team) {
+                if (err) {
+                    throw err;
+                }
+
+                //can't set this team name if such team already exists
+                if (team) {
+                    console.log('HERE');
+                    res.send(500);
+                    return;
+                }
+
+                Team.collection.insert({
+                    name: teamName,
+                    members: [{
+                        id: creator._id,
+                        name: creator.name
+                    }],
+                    creator: creator._id,
+                    captain: null,
+                    projectName:projectName,
+                    projectDescription: projectDescription,
+                    technologies: teamTechnologies,
+                    memberInvites: []
+                }, function (err, docs) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log('Created team:');
+                    console.log('----Name: ' + docs[0].name);
+                    console.log('----_id: ' + docs[0]._id);
+
+                    User.update({_id: creator._id}, {
+                        team: teamName
+                    }, function (err, numAffected) {
+                        if (err) {
+                            throw err;
+                        }
+
+                        console.log('Updated: ' + numAffected + ' users...');
+                    });
+
+                    res.send(docs[0]);
+                });
+
+            });
+        }
+    });
+
     app.post('/epic/createPage', function(req, res) {
         console.log(req.body);
         Page.collection.insert(req.body, function (err, docs) {
@@ -40,21 +101,6 @@ module.exports = function (app, passport) {
 
             console.log('Pages were inserted: ' + docs.length);
             res.send('{}');
-        });
-    });
-
-    app.get('/pages/:pageURL', function(req, res) {
-        var navPages = Page.findOne({href: req.params.pageURL}, function (err, page) {
-            if (err) {
-                throw err;
-            }
-
-            if (!page) {
-                console.log('NO SUCH PAGE?');
-                res.render('Could not find such page.');
-            }
-
-            res.send(page.href);
         });
     });
 
@@ -100,7 +146,7 @@ module.exports = function (app, passport) {
             if (err) {
                 throw err;
             }
-
+            //TODO change to send team object
             var teamMembers = [];
             if (team) {
                 teamMembers = team.members;
@@ -108,7 +154,10 @@ module.exports = function (app, passport) {
 
             res.render('profile.ejs', {
                 user: req.user,
-                teamMembers: teamMembers // get the user out of session and pass it to template
+                teamMembers: teamMembers,
+                //TODO user messages should be retrieved from db
+                userMessages: []
+                 // get the user out of session and pass it to template
             });
         });
     });
@@ -136,36 +185,9 @@ module.exports = function (app, passport) {
 
     app.post('/updateUserInfo', function(req, res) {
         /*Async, so not sure how to separate validation functions from update
-            and call update after validation has finished.*/
-        var teamName = req.body.options.team;
-        if (teamName) {
-            Team.findOne({name: teamName}, function (err, team) {
-                if (err) {
-                    throw err;
-                }
-
-                //can't set this team name if such team already exists
-                if (team) {
-                    res.send('error');
-                    return;
-                }
-                /*Cant call it outside of validation, because
-                    validation is async */
-                Team.collection.insert({
-                    name: teamName,
-                    members: []
-                }, function (err, docs) {
-                    if (err) {
-                        throw err;
-                    }
-
-                    console.log('Created team: ' + docs[0].name);
-                });
-                updateUserInfo(req, res);
-            });
-        } else {
-            updateUserInfo(req, res);
-        }
+            and call update after validation has finished.
+            There existed validation functions once...*/
+        updateUserInfo(req, res);
     });
 
     app.get('/*', function(req, res) {

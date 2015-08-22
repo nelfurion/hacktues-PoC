@@ -6,7 +6,9 @@
         <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
         <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
         <style>
-            body        { padding-top:80px; word-wrap:break-word; }
+            body {
+                 padding-top:80px; word-wrap:break-word;
+             }
             .edit {
                 border: 1px solid grey;
                 cursor: pointer;
@@ -16,6 +18,15 @@
                 margin: 0;
                 padding: 0;
             }
+            label {
+                width: 100px;
+            }
+
+            #team-form-div {
+                //margin-left: 50%;
+                //transform: translateX(-50%);
+                text-align: center;
+            }
         </style>
     </head>
     <body>
@@ -23,6 +34,11 @@
             <div class="page-header text-center">
                 <h1><span class="fa fa-anchor"></span> <%= user.name %></h1>
                 <a href="/logout" class="btn btn-default btn-sm">Logout</a>
+            </div>
+            <div class="messages">
+                <% for (var i = 0; i < userMessages.length; i++) { %>
+                    <div class="alert alert-danger"><%= userMessages[i] %></div>
+                <% } %>
             </div>
             <div class="row">
                 <div class="col-sm-6">
@@ -45,18 +61,23 @@
                     </div>
                 </div>
                 <div class="col-sm-6">
-                    <div class="well">
-                        <span class='edit pull-right'>Добави съотборник</span>
+                    <div class="well" id="user-team-info">
                         <h3><span class="fa fa-user"></span>Отбор</h3>
-                        <ul>
-                            <li>
-                                <strong>Отбор: </strong><span id="team-name"><%= user.team %></span>
-                                <span name="team" class="edit">Редактирай</span>
-                            </li>
-                            <% for (var i = 0; i < teamMembers.length; i++) { %>
-                                <li class="team-member"> -> <a href="user/<%= teamMembers[i].id %>"><%= teamMembers[i].name %></a></li>
-                            <% } %>
-                        </ul>
+                        <%  if (user.team) { %>
+                            <span class='edit pull-right'>Добави съотборник</span>
+
+                            <ul>
+                                <li>
+                                    <strong>Отбор: </strong><span id="team-name"><%= user.team %></span>
+                                    <span name="team" class="edit">Редактирай</span>
+                                </li>
+                                <% for (var i = 0; i < teamMembers.length; i++) { %>
+                                    <li class="team-member"> -> <a href="user/<%= teamMembers[i].id %>"><%= teamMembers[i].name %></a></li>
+                                <% } %>
+                            </ul>
+                        <% } else { %>
+                            <span name="team" onclick="profileModule.appendTeamForm()" class="edit">Създай отбор</span>
+                        <% } %>
                     </div>
                 </div>
             </div>
@@ -66,10 +87,61 @@
             var ProfileModule = (function ($) {
                 var profileModule = {};
 
+                profileModule.appendTeamForm = function () {
+                    $('#user-team-info').html('Извършва се...');
+                    //As said in KPK - optimise only when needed
+                    $.ajax({
+                        url: '/createTeam',
+                        type: 'GET'
+                    })
+                    .done(function(result) {
+                        $('#user-team-info').html(result);
+
+                        $('#team-form-submit').on('click', function(event) {
+                            event.preventDefault();
+                            profileModule.createTeam();
+                        });
+                    })
+                    .fail(function() {
+                        $('#user-team-info').html('Couldn\'t fetch template!');
+                    });
+                }
+
+                profileModule.createTeam = function () {
+                    var teamDiv = $('#user-team-info');
+                    var formData = {
+                        name: $('#form-team-name').val(),
+                        creator: {
+                            _id: '<%= user._id %>',
+                            name: '<%= user._id %>'
+                        },
+                        projectName: $('#form-team-project').val(),
+                        projectDescription: $('#form-team-project-description').val(),
+                        technologies: $('#form-team-technologies').val()
+                    };
+                    if (formData.name && formData.projectName &&
+                    formdata.projectDescription && formdata.technologies &&
+                    formdata.creator._id && formdata.creator.name) {
+                        teamDiv.html('Извършва се...');
+                        $.ajax({
+                            url: '/createTeam',
+                            type: 'POST',
+                            data: formData
+                        })
+                        .done(function(result) {
+                            teamDiv.html(result);
+                        })
+                        .fail(function() {
+                            console.log("error");
+                        });
+                    } else {
+                        alert('Required fields are empty!');
+                    }
+                };
+
                 profileModule.editFieldEvent = function (event) {
                     event.preventDefault();
                     $this = $(event.target);
-                    console.log('Here');
                     profileModule.editField($this);
                 }
 
