@@ -45,6 +45,8 @@ module.exports = function (passport) {
                    newUser.userType = 'user';
                    newUser.name = req.body.name;
                    newUser.team = null;
+                   newUser.systemMessages = [];
+                   newUser.personalMessages = [];
 
                    newUser.save(function (err) {
                        if (err) {

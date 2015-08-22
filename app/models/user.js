@@ -8,7 +8,8 @@ var userSchema = mongoose.Schema({
     userType: String,
     technologies: Object,
     team: String,
-    teamInvites: Array
+    systemMessages: Array,
+    personalMessages: Array
     /*local: {
         email: String,
         password: String,

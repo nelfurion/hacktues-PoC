@@ -1,6 +1,7 @@
 var User = require('./models/user.js');
 var Page = require('./models/page.js');
 var Team = require('./models/team.js');
+var SystemMessage = require('./models/systemMessage.js');
 
 module.exports = function (app, passport) {
     /*NEW ROUTER */
@@ -28,6 +29,20 @@ module.exports = function (app, passport) {
         });
     });
 
+    app.post('/getUserSystemMessages', function(req, res) {
+        var userId = req.body.userId;
+
+        User.findOne({_id: userId}, function (err, user) {
+            if (err) {
+                throw err;
+            }
+
+            var userMessages = user.systemMessages;
+
+            res.send(userMessages);
+        });
+    });
+
     app.get('/createTeam', function(req, res) {
         res.render('partials/create-team.ejs');
     });
@@ -50,7 +65,7 @@ module.exports = function (app, passport) {
                 //can't set this team name if such team already exists
                 if (team) {
                     console.log('HERE');
-                    res.send(500);
+                    res.send(false);
                     return;
                 }
 
@@ -90,6 +105,76 @@ module.exports = function (app, passport) {
 
             });
         }
+    });
+
+    app.post('/respondToTeamInvite', function(req, res) {
+        var userId = req.body.userId,
+            messageId = req.body.messageId,
+            answer = req.body.answer;
+
+        User.findOne({_id: userId}, function (err, user) {
+            if (err) {
+                throw err;
+            }
+
+            if (!user) {
+                console.log(userId);
+                throw 'Can\'t find user with such id: ' + userId;
+            }
+            console.log(user.systemMessages[messageId]);
+            var team = user.systemMessages[messageId].teamSender;
+            user.systemMessages.splice(messageId, 1);
+            if (answer) {
+                user.team = team;
+            }
+
+            user.save(function (err) {
+                if (err) {
+                    throw err;
+                }
+
+                console.log('Updated user: ' + user._id + '...');
+            });
+        });
+    });
+
+    app.post('/sendTeamInvite', function(req, res) {
+        var receiverEmail = req.body.receiverEmail,
+            teamName = req.body.teamName;
+
+        User.findOne({email: receiverEmail}, function (err, user) {
+            if (err) {
+                throw err;
+            }
+
+            if (!user) {
+                res.send('Няма потребител с такъв email.');
+                return;
+            }
+
+            console.log('team name: ' + teamName);
+
+            var messagesLength = user.systemMessages.length;
+            var lastSystemMessage = user.systemMessages[messagesLength - 1];
+            var newMessageId = 0;
+            if (lastSystemMessage) {
+                newMessageId = lastSystemMessage.id + 1;
+            }
+
+            var message = SystemMessage.InviteMessage(newMessageId, 'Invite from team: ' + teamName, teamName, receiverEmail);
+            console.log(message);
+            user.systemMessages.push(message);
+
+            user.save(function (err) {
+                if (err) {
+                    throw err;
+                    res.send('Възникна грешка.');
+                }
+
+                console.log('Added new System Message to user: ' + user._id);
+                res.send('Поканата е изпратена.');
+            });
+        });
     });
 
     app.post('/epic/createPage', function(req, res) {
@@ -225,10 +310,31 @@ module.exports = function (app, passport) {
     }
 
     function updateUserInfo(req, res) {
-        User.update(req.body.query, req.body.options, function (err, numAffected) {
+        //TODO FIX THIS BULLSHIT
+        var teamName = req.body.options.team;
+        console.log(teamName);
+        User.findOne(req.body.query, function (err, user) {
             if (err) {
                 throw err;
             }
+
+            if (!user) {
+                console.log('Can\'t find user...');
+            }
+
+            if (teamName) {
+                Team.update({name: user.team}, {name: teamName}, function (err, numAffected) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log('Change team name...');
+                });
+            }
+        })
+
+        User.update(req.body.query, req.body.options, function (err, numAffected) {
+
 
             console.log('Updated user: ' + req.body.query._id);
             //jquery data is set to json

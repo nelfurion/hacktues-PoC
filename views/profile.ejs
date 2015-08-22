@@ -27,6 +27,23 @@
                 //transform: translateX(-50%);
                 text-align: center;
             }
+
+            #invite-member {
+                border: 1px solid grey;
+                cursor: pointer;
+            }
+
+            span img {
+                width: 100%;
+                height: 100%;
+            }
+
+            .invite-action {
+                display: inline-block;
+                height: 10px;
+                width: 10px;
+                cursor: pointer;
+            }
         </style>
     </head>
     <body>
@@ -35,10 +52,12 @@
                 <h1><span class="fa fa-anchor"></span> <%= user.name %></h1>
                 <a href="/logout" class="btn btn-default btn-sm">Logout</a>
             </div>
-            <div class="messages">
+            <div id="messages">
+                <!-- system messages shown on page-load -->
                 <% for (var i = 0; i < userMessages.length; i++) { %>
                     <div class="alert alert-danger"><%= userMessages[i] %></div>
                 <% } %>
+                <!-- more messages are loaded with handlebars -->
             </div>
             <div class="row">
                 <div class="col-sm-6">
@@ -64,7 +83,7 @@
                     <div class="well" id="user-team-info">
                         <h3><span class="fa fa-user"></span>Отбор</h3>
                         <%  if (user.team) { %>
-                            <span class='edit pull-right'>Добави съотборник</span>
+                            <span id="invite-member" class='pull-right'>Добави съотборник</span>
 
                             <ul>
                                 <li>
@@ -82,10 +101,138 @@
                 </div>
             </div>
         </div>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/3.0.3/handlebars.min.js"></script>
         <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+        <script type="text/system-messages-template" id="system-messages-template">
+            {{#each messages}}
+                {{#ifCond this.type '===' 'invite'}}
+                    <p id="{{this.id}}">
+                        {{this.text}}
+                        <span class="invite-action accept">
+                            <img src="http://ian.umces.edu/imagelibrary/albums/userpics/12789/normal_ian-symbol-positive.png" alt="Приеми" />
+                        </span>
+                        <span class="invite-action deny">
+                            <img src="http://www.pd4pic.com/images/red-sign-icon-mark-symbol-cross-marks-orange.png" alt="Откажи" />
+                        </span>
+                    </p>
+                {{/ifCond}}
+            {{/each}}
+        </script>
         <script type="text/javascript">
-            var ProfileModule = (function ($) {
-                var profileModule = {};
+            Handlebars.registerHelper('ifCond', function (v1, operator, v2, options) {
+                switch (operator) {
+                    case '==':
+                        return (v1 == v2) ? options.fn(this) : options.inverse(this);
+                    case '===':
+                        return (v1 === v2) ? options.fn(this) : options.inverse(this);
+                    case '<':
+                        return (v1 < v2) ? options.fn(this) : options.inverse(this);
+                    case '<=':
+                        return (v1 <= v2) ? options.fn(this) : options.inverse(this);
+                    case '>':
+                        return (v1 > v2) ? options.fn(this) : options.inverse(this);
+                    case '>=':
+                        return (v1 >= v2) ? options.fn(this) : options.inverse(this);
+                    case '&&':
+                        return (v1 && v2) ? options.fn(this) : options.inverse(this);
+                    case '||':
+                        return (v1 || v2) ? options.fn(this) : options.inverse(this);
+                    default:
+                        return options.inverse(this);
+                }
+            });
+
+            var ProfileModule = (function ($, Handlebars) {
+                profileModule = {};
+
+                profileModule.user = {
+                    id: '<%= user._id %>',
+                    team: '<%= user.team %>',
+                    name: '<%= user.name %>',
+                    email: '<%= user.email %>',
+                    userType: '<%= user.userType %>',
+                    personalMessages: '<%= user.personalMessages %>',
+                    systemMessages: '<%= user.systemMessages %>',
+                };
+
+                /*TODO ANTI KPK SHOULD BE FIXED */
+                profileModule.initFunctionality = function (systemMessagesTemplate) {
+                    /*TODO fix this event */
+                    $('.edit').on('click', function(event) {
+                        profileModule.editFieldEvent(event);
+                    });
+
+                    $('#messages').on('click', '.invite-action', function(event) {
+                        event.preventDefault();
+                        /* Act on the event */
+                        $this = $(this);
+                        var messageId = $this.parent().attr('id');
+                        if ($this.hasClass('accept')) {
+                            profileModule.respondToTeamInvite(messageId, true);
+                        } else {
+                            profileModule.respondToTeamInvite(messageId, false);
+                        }
+
+                    });;
+
+                    $('#invite-member').on('click', function(event) {
+                        event.preventDefault();
+                        var inviteTemplate = $('<div />');
+                        var inviteInput = $('<input />')
+                            .attr('placeholder', 'email')
+                            .attr('id', 'invite-user-email');;
+                        inviteTemplate.append(inviteInput);
+
+                        var inviteButton = $('<button />')
+                            .html('Прати покана')
+                            .on('click', function(event) {
+                                event.preventDefault();
+                                profileModule.sendTeamInvite('');
+                            });
+                        inviteTemplate.append(inviteButton);
+                        inviteTemplate.insertAfter(this);
+                    });
+
+                    profileModule.initSystemMessagesTemplate(systemMessagesTemplate);
+
+                    setInterval(function() {
+                         profileModule.getUserSystemMessages();
+                     }, 3000);
+                }
+
+                profileModule.initSystemMessagesTemplate = function (selector) {
+                    var source = $(selector).html();
+                    console.log('source: ' + source);
+                    profileModule.messagesTemplate = Handlebars.compile(source);
+                }
+
+                profileModule.getUserSystemMessages = function () {
+                    var userId = profileModule.user.id;
+
+                    $.ajax({
+                        url: '/getUserSystemMessages',
+                        type: 'POST',
+                        data: {
+                            userId: userId
+                        }
+                    })
+                    .done(function(messages) {
+                        profileModule.user.systemMessages = messages;
+                        //Handlebars wants object
+                        var messavesObj = {
+                            messages: messages
+                        }
+                        if (messages.length > 0) {
+                            var messagesContainer =  $('#messages'),
+                                messagesHtml = profileModule.messagesTemplate(messavesObj);
+
+                            messagesContainer.html(messagesHtml);
+                        }
+                    })
+                    .fail(function() {
+                        alert('Error fetching messages!');
+                    });
+                }
 
                 profileModule.appendTeamForm = function () {
                     $('#user-team-info').html('Извършва се...');
@@ -103,7 +250,7 @@
                         });
                     })
                     .fail(function() {
-                        $('#user-team-info').html('Couldn\'t fetch template!');
+                        $('#user-team-info').html('Couldn\'t fetch form template!');
                     });
                 }
 
@@ -112,16 +259,16 @@
                     var formData = {
                         name: $('#form-team-name').val(),
                         creator: {
-                            _id: '<%= user._id %>',
-                            name: '<%= user._id %>'
+                            _id: profileModule.user.id,
+                            name: profileModule.user.name
                         },
                         projectName: $('#form-team-project').val(),
                         projectDescription: $('#form-team-project-description').val(),
                         technologies: $('#form-team-technologies').val()
                     };
                     if (formData.name && formData.projectName &&
-                    formdata.projectDescription && formdata.technologies &&
-                    formdata.creator._id && formdata.creator.name) {
+                        formData.projectDescription && formData.technologies &&
+                        formData.creator._id && formData.creator.name) {
                         teamDiv.html('Извършва се...');
                         $.ajax({
                             url: '/createTeam',
@@ -130,6 +277,7 @@
                         })
                         .done(function(result) {
                             teamDiv.html(result);
+                            profileModule.user.team = result.name;
                         })
                         .fail(function() {
                             console.log("error");
@@ -139,17 +287,54 @@
                     }
                 };
 
+                profileModule.sendTeamInvite = function () {
+                    $.ajax({
+                        url: '/sendTeamInvite',
+                        type: 'POST',
+                        data: {
+                            receiverEmail: $('#invite-user-email').val(),
+                            teamName: profileModule.user.team
+                        }
+                    })
+                    .done(function(result) {
+                        alert(result);
+                    })
+                    .fail(function() {
+                        console.log("error");
+                    })
+                    .always(function() {
+                        console.log("complete");
+                    });
+
+                };
+
+                profileModule.respondToTeamInvite = function (messageId, answer) {
+                    $.ajax({
+                        url: '/respondToTeamInvite',
+                        type: 'POST',
+                        data: {
+                            userId: profileModule.user.id,
+                            messageId: messageId,
+                            answer: answer
+                        }
+                    })
+                    .done(function() {
+                        console.log("success");
+                    })
+                    .fail(function() {
+                        console.log("error");
+                    })
+                    .always(function() {
+                        console.log("complete");
+                    });
+
+                }
+
                 profileModule.editFieldEvent = function (event) {
                     event.preventDefault();
                     $this = $(event.target);
                     profileModule.editField($this);
                 }
-
-                profileModule.setEditEvent = function () {
-                    $('.edit').on('click', function(event) {
-                        profileModule.editFieldEvent(event);
-                    });
-                };
 
                 profileModule.editField = function (caller) {
                     var span = caller.prev();
@@ -181,7 +366,7 @@
                         update.remove();
                         li.append(newSpan);
                         var query = {
-                            _id: '<%= user._id %>'
+                            _id: profileModule.user.id
                         };
 
                         var newValue = input.val();
@@ -215,18 +400,15 @@
                         var teamName = $('#team-name');
                         var oldHTML = teamName.html();
                         teamName.html(oldHTML + ' Could not change team name.');
-                    })
-                    .always(function(a) {
-                        console.log(a);
                     });
                 };
 
                 return profileModule;
-            }(jQuery));
+            }(jQuery, Handlebars));
 
             var profileModule = ProfileModule;
 
-            profileModule.setEditEvent();
+            profileModule.initFunctionality('#system-messages-template');
         </script>
     </body>
 </html>
