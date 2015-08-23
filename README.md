@@ -14,6 +14,7 @@ HackTUES proof of concept for using node
   - Exclusive admin page
   - See all users
   - Add pages
+  - Add news
   
 ###Teams
   - Teams are listed in a separate page
