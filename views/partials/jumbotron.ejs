@@ -1,0 +1,17 @@
+<div class="jumbotron text-center">
+    <h1>HackTUES</h1>
+    <p>Login or Register with:</p>
+
+    <a class="partial" href="/login" class="btn btn-default"><span class="fa fa-user"></span> Local Login</a>
+    <a class="partial" href="/signup" class="btn btn-default"><span class="fa fa-user"></span> Local Signup</a>
+
+    <h2>Our database pages:</h2>
+    <ul>
+        <% for (var i = 0; i < dbPages.length; i++) { %>
+            <li><a class="partial" href="<%= dbPages[i].href %>"><%= dbPages[i].name %></a></li>
+        <% } %>
+    </ul>
+</div>
+<% if (message.length > 0) { %>
+    <div class="alert alert-danger"><%= message %></div>
+<% } %>

@@ -1,7 +1,9 @@
 var User = require('./models/user.js');
 var Page = require('./models/page.js');
 var Team = require('./models/team.js');
+var News = require('./models/news.js');
 var SystemMessage = require('./models/systemMessage.js');
+var fs = require('fs');
 var serverError = 500; //for ajax
 
 module.exports = function (app, passport) {
@@ -15,7 +17,7 @@ module.exports = function (app, passport) {
             var navPages = [];
 
             for (var i = 0; i < pages.length; i++) {
-                if (pages[i].nav === 'true') {
+                if (pages[i].nav === 'on') {
                     navPages.push(pages[i]);
                 }
             }
@@ -25,6 +27,29 @@ module.exports = function (app, passport) {
                 dbPages: pages,
                 navPages: navPages
             });
+        });
+    });
+
+    app.get('/news.ejs', function(req, res) {
+        Page.find({nav: 'on'}, function (err, pages) {
+            if (err) {
+                throw err;
+            }
+
+            if (!pages) {
+                throw 'Cant find any pages!...';
+            }
+
+            News.find({}, function (err, news) {
+                if (err) {
+                    throw err;
+                }
+
+                res.render('news.ejs', {
+                    navPages: pages,
+                    news: news || []
+                });
+            })
         });
     });
 
@@ -187,8 +212,7 @@ module.exports = function (app, passport) {
         });
     });
 
-    app.post('/epic/createPage', function(req, res) {
-        console.log(req.body);
+    app.post('/admin/createPage', function(req, res) {
         Page.collection.insert(req.body, function (err, docs) {
             if (err) {
                 throw err;
@@ -196,6 +220,18 @@ module.exports = function (app, passport) {
 
             console.log('Pages were inserted: ' + docs.length);
             res.send('{}');
+        });
+    });
+
+    app.post('/admin/createNews', function(req, res) {
+        req.body.published = new Date();
+        News.collection.insert(req.body, function (err, docs) {
+            if (err) {
+                res.send(serverError);
+                throw err;
+            }
+            console.log(req.body);
+            console.log('News were created: ' + docs.length);
         });
     });
 
@@ -212,8 +248,19 @@ module.exports = function (app, passport) {
 
     //show login form
     app.get('/login', function(req, res) {
-        res.render('login.ejs', {
-            message: req.flash('loginMessage')
+        Page.find({nav: 'on'}, function (err, pages) {
+            if (err) {
+                throw err;
+            }
+
+            if (!pages) {
+                throw 'Cant find any pages!...';
+            }
+
+            res.render('login.ejs', {
+                navPages: pages,
+                message: req.flash('loginMessage')
+            });
         });
     });
 
@@ -225,8 +272,19 @@ module.exports = function (app, passport) {
 
     //show signup form
     app.get('/signup', function(req, res) {
-        res.render('signup.ejs', {
-            message: req.flash('signupMessage')
+        Page.find({nav: 'on'}, function (err, pages) {
+            if (err) {
+                throw err;
+            }
+
+            if (!pages) {
+                throw 'Cant find any pages!...';
+            }
+
+            res.render('signup.ejs', {
+                navPages: pages,
+                message: req.flash('signupMessage')
+            });
         });
     });
 
@@ -247,13 +305,23 @@ module.exports = function (app, passport) {
                 teamMembers = team.members;
             }
 
-            res.render('profile.ejs', {
-                user: req.user,
-                teamMembers: teamMembers,
-                //TODO user messages should be retrieved from db
-                userMessages: []
-                 // get the user out of session and pass it to template
-            });
+            Page.find({nav: 'on'}, function (err, pages) {
+                if (err) {
+                    throw err;
+                }
+
+                if (!pages) {
+                    throw 'Cant find navigation pages';
+                }
+
+                res.render('profile.ejs', {
+                    navPages: pages,
+                    user: req.user,
+                    teamMembers: teamMembers,
+                    //TODO user messages should be retrieved from db
+                    userMessages: []
+                });
+            })
         });
     });
 
@@ -263,7 +331,30 @@ module.exports = function (app, passport) {
     });
 
     app.get('/admin',isLoggedIn, isAdmin, function (req, res) {
-        res.render('admin/index.ejs');
+        fs.readFile('libs/ckeditor/ckeditor.js', 'utf8', function (err,ckeditor) {
+          if (err) {
+            return console.log(err);
+          }
+
+          Page.find({nav: 'on'}, function (err, pages) {
+              if (err) {
+                  throw err;
+              }
+
+              if (!pages) {
+                  throw 'Cant find any pages!...';
+              }
+
+              res.render('admin/index.ejs', {
+                  message: req.flash('privilegesMessage'),
+                  navPages: pages,
+                  ckeditor: ckeditor
+              });
+          });
+        });
+
+
+
     });
 
     app.get('/getAllUsers', function(req, res) {
@@ -285,18 +376,43 @@ module.exports = function (app, passport) {
         updateUserInfo(req, res);
     });
 
-    app.get('/*', function(req, res) {
+    /*app.get('/*', function(req, res) {
         Page.findOne({href: req.originalUrl}, function (err, page) {
             if (err) {
                 throw err;
             }
 
+            console.log(req.originalUrl);
             if (!page) {
                 res.render('404.ejs');
                 return;
             }
 
             res.send(page.body);
+        })
+    });*/
+
+    app.get('/*', function(req, res) {
+        Page.findOne({href: req.originalUrl}, function (err, page) {
+            if (err) {
+                throw err;
+            }
+
+            console.log(req.originalUrl);
+            if (!page) {
+                res.render('404.ejs');
+                return;
+            }
+            Page.find({nav: 'on'}, function (err, pages) {
+                if (err) {
+                    throw err;
+                }
+
+                res.render('navPageTemplate.ejs', {
+                    navPages: pages,
+                    content: page.body
+                });
+            })
         })
     });
 

@@ -2,21 +2,44 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title></title>
+        <title>HackTUES - Admin Panel</title>
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css"> <!-- load bootstrap css -->
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"> <!-- load fontawesome -->
+        <style>
+            body {
+                padding: 0;
+            }
+        </style>
     </head>
     <body>
-        <h1>YOU ARE AN ADMIN1!!!!!!111!11!</h1>
-        <button onclick="usersModule.getAllUsers()">Get all users</button>
-        <!-- BULLSHIT -->
-        <input type="text" id="page-name" name="name" value="" placeholder="page name">
-        <input type="text" id="page-href" name="href" value="" placeholder="page href">
-        <input type="text" id="page-body" name="href" value="" placeholder="page body">
-        <input type="checkbox" id="page-nav" name="nav">
-        <button onclick="createPage()">Create page</button>
-        <!-- BULLSHIT END -->
-        <div id="users-list-container">
+        <div class="container">
+            <% include ../partials/navigation.ejs %>
+            <h1>YOU ARE AN ADMIN1!!!!!!111!11!</h1>
+            <div id="users">
+                <button onclick="usersModule.getAllUsers()">Get all users</button>
+            </div>
+
+
+            <div id="users-list-container">
+            </div>
+            <div id="create-page">
+                <% include partials/create-page.ejs %>
+            </div>
+            <div id="create-news">
+                <% include partials/create-news.ejs %>
+            </div>
+
         </div>
+
         <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+        <script>
+            <%=ckeditor %>
+        </script>
+        <script type="text/javascript">
+        <% include ../../app/libs/ejs_production.js %> //not sure if i will use it, but epic nonetheless
+        </script>
+        <script src="//cdn.ckeditor.com/4.5.3/full/ckeditor.js"></script>
         <script type="text/javascript">
             var UsersModule = (function ($) {
                 var usersModule = {};
@@ -41,8 +64,37 @@
 
             var usersModule = UsersModule;
 
-            console.log(usersModule);
+            CKEDITOR.entities = false;
+            CKEDITOR.replace( 'page-body', {
+                on: {
+                    instanceReady: function( ev ) {
+                        // Output paragraphs as <p>Text</p>.
+                        this.dataProcessor.writer.setRules( 'p', {
+                            indent: false,
+                            breakBeforeOpen: true,
+                            breakAfterOpen: false,
+                            breakBeforeClose: false,
+                            breakAfterClose: true
+                        });
+                    }
+                }
+            });
 
+            CKEDITOR.entities = false;
+            CKEDITOR.replace( 'news-content', {
+                on: {
+                    instanceReady: function( ev ) {
+                        // Output paragraphs as <p>Text</p>.
+                        this.dataProcessor.writer.setRules( 'p', {
+                            indent: false,
+                            breakBeforeOpen: true,
+                            breakAfterOpen: false,
+                            breakBeforeClose: false,
+                            breakAfterClose: true
+                        });
+                    }
+                }
+            });
             function createPage() {
                 var pageName = $('#page-name').val();
 
@@ -67,6 +119,27 @@
                 })
                 .always(function() {
                     console.log("complete");
+                });
+            }
+
+            function createNews() {
+                var date = new Date(year, month, day, hours, minutes);
+                var news = {
+                    name: $('#news-name').val(),
+                    content: $('#news-content').val(),
+                    published: date
+                }
+
+                $.ajax({
+                    url: 'createNews',
+                    type: 'POST',
+                    data: news
+                })
+                .done(function() {
+                    alert('success');
+                })
+                .fail(function() {
+                    alert("error");
                 });
 
             }

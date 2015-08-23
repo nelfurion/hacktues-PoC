@@ -6,9 +6,6 @@
         <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
         <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
         <style>
-            body {
-                 padding-top:80px; word-wrap:break-word;
-             }
             .edit {
                 border: 1px solid grey;
                 cursor: pointer;
@@ -48,6 +45,12 @@
     </head>
     <body>
         <div class="container">
+            <% include partials/navigation.ejs %>
+            <% if (user.userType === 'admin') { %>
+                <div class="">
+                    <a href="/admin">Admin panel</a>
+                </div>
+            <% } %>
             <div class="page-header text-center">
                 <h1><span class="fa fa-anchor"></span> <%= user.name %></h1>
                 <a href="/logout" class="btn btn-default btn-sm">Logout</a>
