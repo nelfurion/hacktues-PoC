@@ -32,10 +32,16 @@ HackTUES proof of concept for using node
   - Pages have their own name
   - Pages have their own href
   - Pages have their own html
+  - Pages are rendered in a template
 
 ###Navigation
   - Navigation renders all pages, that have the nav flag set to 'true'
   - Added dynamically
+
+###News can now be added
+  - Title
+  - Content
+  - Date
 
 ##Dependencies
 
